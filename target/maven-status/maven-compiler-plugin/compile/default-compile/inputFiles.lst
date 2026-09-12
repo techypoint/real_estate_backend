@@ -1,0 +1,15 @@
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/EstatesApplication.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/config/AppProperties.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/config/JacksonConfig.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/config/WebConfig.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/dto/LeadRequest.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/dto/PageResponse.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/dto/ProjectSummary.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/dto/PublishedProjectRef.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/dto/StatsResponse.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/model/Lead.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/repository/LeadRepository.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/repository/ProjectRepository.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/web/CdnUrlResolver.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/web/LeadController.java
+/home/vbeast/real_estate_projcts/real_estate_website/real_estate_backend/src/main/java/com/uprera/estates/web/ProjectController.java
