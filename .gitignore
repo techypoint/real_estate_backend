@@ -3,3 +3,7 @@ target/
 .mvn/wrapper/maven-wrapper.properties
 .DS_Store
 .idea/
+
+# run.sh runtime artifacts — per-machine, not source
+backend.pid
+backend.log
