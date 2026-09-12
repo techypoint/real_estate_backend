@@ -12,15 +12,11 @@ case "$PROFILE" in
   *) echo "Usage: $0 [local|prod]" >&2; exit 1 ;;
 esac
 
-# This machine has no system JDK — `java` is a JRE, `javac` doesn't exist
-# under /usr/lib/jvm (see CLAUDE.md). Fall back to IntelliJ's bundled JDK
-# unless JAVA_HOME is already set to something that actually has javac.
-if [[ -z "${JAVA_HOME:-}" || ! -x "${JAVA_HOME}/bin/javac" ]]; then
-  export JAVA_HOME=/home/vbeast/.jdks/ms-21.0.7
-fi
-
+# Requires a real JDK 21 on PATH/JAVA_HOME (javac, not just a JRE) —
+# `sudo apt install openjdk-21-jdk` if `mvn compile` fails with
+# "release version 21 not supported".
 export SPRING_PROFILES_ACTIVE="$PROFILE"
 cd "$(dirname "$0")"
 
-echo "Starting backend — profile: $PROFILE, JAVA_HOME: $JAVA_HOME"
+echo "Starting backend — profile: $PROFILE"
 exec mvn spring-boot:run
