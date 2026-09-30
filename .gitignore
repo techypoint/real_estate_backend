@@ -7,3 +7,11 @@ target/
 # run.sh runtime artifacts — per-machine, not source
 backend.pid
 backend.log
+
+# Local secrets — never committed. See secrets.local.sh's own header.
+secrets.local.sh
+
+# Real secret values for local dev, auto-loaded by Spring Boot's external
+# config location (file:./config/) regardless of launch method — see that
+# file's own header comment for why this replaced sourcing secrets.local.sh.
+config/application-local.properties
