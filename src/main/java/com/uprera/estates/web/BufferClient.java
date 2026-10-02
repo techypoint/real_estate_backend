@@ -94,13 +94,25 @@ public class BufferClient {
             log.info("Buffer post for platform \"{}\" has an image ({}) but media attachment isn't wired up yet — posting text-only", platform, imageUrl);
         }
 
+        // Verified live against Buffer's real schema via introspection
+        // (2026-10-02, __type(name: "FacebookPostMetadataInput")/"PostTypeFacebook"):
+        // Facebook requires metadata.facebook.type (post|reel|story) — a
+        // real "Facebook posts require a type" error surfaced this, not
+        // guessed from docs. LinkedIn's metadata input has no required
+        // fields (introspected the same way), so omitting it is fine.
+        // Instagram's metadata requires `type` (PostType!) AND
+        // `shouldShareToFeed` (Boolean!) — introspected but NOT implemented
+        // below since Instagram isn't configured yet; calling this for
+        // instagram will fail loudly with a clear GraphQL error rather than
+        // silently misposting, same tradeoff as the pre-existing image gap.
         String query = """
-                mutation CreatePost($text: String!, $channelId: String!) {
+                mutation CreatePost($text: String!, $channelId: ChannelId!, $metadata: PostInputMetaData) {
                   createPost(input: {
                     text: $text,
                     channelId: $channelId,
                     schedulingType: automatic,
-                    mode: addToQueue
+                    mode: addToQueue,
+                    metadata: $metadata
                   }) {
                     ... on PostActionSuccess { post { id } }
                     ... on MutationError { message }
@@ -111,6 +123,7 @@ public class BufferClient {
         Map<String, Object> variables = new LinkedHashMap<>();
         variables.put("text", text);
         variables.put("channelId", channelId);
+        variables.put("metadata", "facebook".equals(platform) ? Map.of("facebook", Map.of("type", "post")) : null);
 
         Map<String, Object> body = Map.of("query", query, "variables", variables);
 
