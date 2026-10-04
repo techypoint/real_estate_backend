@@ -40,5 +40,8 @@ public record Blog(
         String heroImageAttributionUrl,
         BlogStatus status,
         Instant publishedAt,
+        // Instagram reel progress for this blog — null until the reel pipeline claims it.
+        // Only set by /api/blogs/{slug}/reel/claim and /api/blogs/{slug}/reel, never by POST.
+        ReelStatus reelStatus,
         Instant createdAt
 ) {}

@@ -12,4 +12,7 @@ public interface BlogRepository extends MongoRepository<Blog, String> {
     Optional<Blog> findBySlug(String slug);
 
     Page<Blog> findByStatus(BlogStatus status, Pageable pageable);
+
+    /** Published blogs that the reel pipeline has not claimed yet (reelStatus absent). */
+    Page<Blog> findByStatusAndReelStatusIsNull(BlogStatus status, Pageable pageable);
 }

@@ -14,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -76,6 +77,15 @@ public class BufferClient {
     }
 
     public PostResult createPost(String platform, String text, String imageUrl) {
+        return createPost(platform, text, imageUrl, null);
+    }
+
+    /**
+     * Posts to one platform. {@code videoUrl} (Instagram only) makes it a reel:
+     * the video goes in as the asset and the post type becomes {@code reel}.
+     * When set, {@code imageUrl} is ignored.
+     */
+    public PostResult createPost(String platform, String text, String imageUrl, String videoUrl) {
         if (!StringUtils.hasText(accessToken)) {
             return PostResult.notPosted("Buffer not configured (app.buffer-access-token unset)");
         }
@@ -84,15 +94,28 @@ public class BufferClient {
             return PostResult.notPosted("No Buffer channel configured for platform \"" + platform + "\" (app.buffer-channel-ids)");
         }
 
-        // TODO(verify against a real access token): attach `imageUrl` once the
-        // correct input field/shape for media is confirmed (see class comment —
-        // GraphQL directives like @include can't gate an input-object field the
-        // way an earlier draft of this code tried; that's invalid GraphQL, not
-        // just unverified). Until then, every post goes out text-only even when
-        // an image was provided.
-        if (StringUtils.hasText(imageUrl)) {
-            log.info("Buffer post for platform \"{}\" has an image ({}) but media attachment isn't wired up yet — posting text-only", platform, imageUrl);
+        // Verified live against Buffer's real schema via introspection
+        // (2026-10-02, __type(name: "CreatePostInput")/"AssetInput"/
+        // "ImageAssetInput"): `assets: [AssetInput!]!` defaults to `[]`
+        // (confirmed via introspection's `defaultValue`, and by the fact our
+        // earlier text-only test succeeded without ever passing it) — each
+        // entry is `{ image: { url } }`, where `ImageAssetInput.url` is the
+        // only required field. An earlier draft of this code tried to gate
+        // the field with a GraphQL `@include` directive on an input-object
+        // value, which is invalid GraphQL (that directive only applies to
+        // field selections/fragments) — not repeated here; emptiness is
+        // expressed as an empty list, a valid value, not a conditional field.
+        boolean isReel = StringUtils.hasText(videoUrl);
+        if (isReel && !"instagram".equals(platform)) {
+            return PostResult.notPosted("Reels are only wired up for instagram (got \"" + platform + "\")");
         }
+        // Video assets: confirmed via introspection on 2026-10-04 — AssetInput has
+        // `video: VideoAssetInput`, and VideoAssetInput's only required field is `url`.
+        List<Object> assets = isReel
+                ? List.of(Map.of("video", Map.of("url", videoUrl)))
+                : StringUtils.hasText(imageUrl)
+                        ? List.of(Map.of("image", Map.of("url", imageUrl)))
+                        : List.of();
 
         // Verified live against Buffer's real schema via introspection
         // (2026-10-02, __type(name: "FacebookPostMetadataInput")/"PostTypeFacebook"):
@@ -100,19 +123,29 @@ public class BufferClient {
         // real "Facebook posts require a type" error surfaced this, not
         // guessed from docs. LinkedIn's metadata input has no required
         // fields (introspected the same way), so omitting it is fine.
-        // Instagram's metadata requires `type` (PostType!) AND
-        // `shouldShareToFeed` (Boolean!) — introspected but NOT implemented
-        // below since Instagram isn't configured yet; calling this for
-        // instagram will fail loudly with a clear GraphQL error rather than
-        // silently misposting, same tradeoff as the pre-existing image gap.
+        //
+        // Instagram (added 2026-10-02 once its channel id arrived): its
+        // metadata requires `type` (PostType! — introspected enum values
+        // include carousel/event/post/reel/short/story/thread/etc.; `post`
+        // is the standard single-image/caption feed post) AND
+        // `shouldShareToFeed` (Boolean!, no introspected default) — `true`
+        // for a normal feed post, same as `type: post`.
+        Map<String, Object> metadata = switch (platform) {
+            case "facebook" -> Map.of("facebook", Map.of("type", "post"));
+            // A reel is PostType `reel` (introspected 2026-10-04); it still shares to the feed.
+            case "instagram" -> Map.of("instagram", Map.of("type", isReel ? "reel" : "post", "shouldShareToFeed", true));
+            default -> null;
+        };
+
         String query = """
-                mutation CreatePost($text: String!, $channelId: ChannelId!, $metadata: PostInputMetaData) {
+                mutation CreatePost($text: String!, $channelId: ChannelId!, $metadata: PostInputMetaData, $assets: [AssetInput!]!) {
                   createPost(input: {
                     text: $text,
                     channelId: $channelId,
                     schedulingType: automatic,
                     mode: addToQueue,
-                    metadata: $metadata
+                    metadata: $metadata,
+                    assets: $assets
                   }) {
                     ... on PostActionSuccess { post { id } }
                     ... on MutationError { message }
@@ -123,7 +156,8 @@ public class BufferClient {
         Map<String, Object> variables = new LinkedHashMap<>();
         variables.put("text", text);
         variables.put("channelId", channelId);
-        variables.put("metadata", "facebook".equals(platform) ? Map.of("facebook", Map.of("type", "post")) : null);
+        variables.put("metadata", metadata);
+        variables.put("assets", assets);
 
         Map<String, Object> body = Map.of("query", query, "variables", variables);
 

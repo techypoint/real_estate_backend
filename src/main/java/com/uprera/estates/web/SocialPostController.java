@@ -36,10 +36,12 @@ public class SocialPostController {
 
     private final BufferClient buffer;
     private final SocialPostLogRepository logs;
+    private final BlogReelStatusUpdater blogs;
 
-    public SocialPostController(BufferClient buffer, SocialPostLogRepository logs) {
+    public SocialPostController(BufferClient buffer, SocialPostLogRepository logs, BlogReelStatusUpdater blogs) {
         this.buffer = buffer;
         this.logs = logs;
+        this.blogs = blogs;
     }
 
     @PostMapping
@@ -49,7 +51,11 @@ public class SocialPostController {
             return ResponseEntity.ok(existing.get().toResult());
         }
 
-        BufferClient.PostResult result = buffer.createPost(body.platform(), body.text(), body.imageUrl());
+        BufferClient.PostResult result = buffer.createPost(body.platform(), body.text(), body.imageUrl(), body.videoUrl());
+
+        if (result.posted() && body.blogSlug() != null && body.videoUrl() != null) {
+            blogs.markReelPosted(body.blogSlug());
+        }
 
         if (result.posted()) {
             // Only a real, side-effecting outcome is worth remembering — an

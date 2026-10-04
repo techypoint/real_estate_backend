@@ -11,6 +11,9 @@ import jakarta.validation.constraints.Size;
  * why that matters: this endpoint posts to exactly one Buffer channel per
  * call, there is no multi-platform shape to send here).
  *
+ * Reel fields ({@code videoUrl}, {@code blogSlug}) are optional and used only by
+ * the Reel From Blog pipeline.
+ *
  * {@code idempotencyKey} is the Publisher's deterministic
  * "&lt;slug&gt;:&lt;platform&gt;" — see SocialPostLog for how it's used to
  * make a retried call safe instead of creating a duplicate post.
@@ -19,5 +22,10 @@ public record SocialPostRequest(
         @NotBlank @Pattern(regexp = "^(instagram|facebook|linkedin)$", message = "must be instagram, facebook, or linkedin") String platform,
         @NotBlank @Size(max = 3000) String text,
         String imageUrl,
+        // Set only for an Instagram reel (publicly reachable MP4 URL). Makes this a reel post.
+        String videoUrl,
+        // Set only for a reel: the blog it was made from. When the reel posts, that blog
+        // is marked reelStatus=POSTED (see SocialPostController).
+        String blogSlug,
         @NotBlank @Size(max = 200) String idempotencyKey
 ) {}
