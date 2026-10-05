@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Run the backend against a specific Spring profile.
+
 #
 # Runs in the BACKGROUND by default (builds a jar, launches it with nohup so
 # it survives closing the terminal/SSH session) and tracks it via backend.pid
